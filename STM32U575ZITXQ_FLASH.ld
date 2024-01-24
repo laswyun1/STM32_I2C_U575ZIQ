@@ -149,8 +149,7 @@ SECTIONS
   .i2c_test_buffer (NOLOAD) :
   {
   	. = ABSOLUTE(0x28000000);
-  	*(.i2c1RxBuff)
-  	*(.i2c2TxBuff)
+  	*(.i2c2RxBuff)
   } >SRAM4
 
 

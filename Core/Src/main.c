@@ -108,179 +108,10 @@ typedef struct _IOIF_I2CObj_t {
 /* USER CODE BEGIN PV */
 
 /* For DMA I2C Communication (with DMA) */
-static uint8_t i2c1CommDmaRxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c1RxBuff"))) = {0};
-static uint8_t i2c2CommDmaTxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c2TxBuff"))) = {0};
+static uint8_t i2c2CommDmaRxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c2RxBuff"))) = {0};
 
 uint8_t rxByteDataArray[DATA_TOTAL_BYTE] = {0};
 
-uint32_t txTime = 0;
-uint32_t rxTime = 0;
-
-IOIF_I2CObj_t* i2cPtr = NULL;
-IOIF_I2CObj_t i2cTxObj = {0};
-
-
-/* Transmission */
-uint8_t AppendI2CData(IOIF_I2CDataType_t dataType, void* dataAddr)
-{
-	i2cPtr = &i2cTxObj;
-
-	if (dataType == I2C_DOUBLE){
-		i2cPtr->doubleI2CData[i2cPtr->doubleIndex] = *((double*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_DOUBLE;
-
-		i2cPtr->doubleIndex++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(double);
-	}
-	else if (dataType == I2C_FLOAT){
-		i2cPtr->floatI2CData[i2cPtr->floatIndex] = *((float*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_FLOAT;
-
-		i2cPtr->floatIndex++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(float);
-	}
-	else if (dataType == I2C_INT32){
-		i2cPtr->int32I2CData[i2cPtr->int32Index] = *((int32_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_INT32;
-
-		i2cPtr->int32Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(int32_t);
-	}
-	else if (dataType == I2C_UINT32){
-		i2cPtr->uint32I2CData[i2cPtr->uint32Index] = *((uint32_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_UINT32;
-
-		i2cPtr->uint32Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(uint32_t);
-	}
-	else if (dataType == I2C_INT16){
-		i2cPtr->int16I2CData[i2cPtr->int16Index] = *((int16_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_INT16;
-
-		i2cPtr->int16Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(int16_t);
-	}
-	else if (dataType == I2C_UINT16){
-		i2cPtr->uint16I2CData[i2cPtr->uint16Index] = *((uint16_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_UINT16;
-
-		i2cPtr->uint16Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(uint16_t);
-	}
-	else if (dataType == I2C_INT8){
-		i2cPtr->int8I2CData[i2cPtr->int8Index] = *((int8_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_INT8;
-
-		i2cPtr->int8Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(int8_t);
-	}
-	else if (dataType == I2C_UINT8){
-		i2cPtr->uint8I2CData[i2cPtr->uint8Index] = *((uint8_t*)dataAddr);
-		i2cPtr->dataTypeArray[i2cPtr->totalDataNum] = I2C_UINT8;
-
-		i2cPtr->uint8Index++;
-		i2cPtr->totalDataNum++;
-		i2cPtr->totalDataByte += sizeof(uint8_t);
-	}
-	else {
-		return 1;
-		// Error Check
-	}
-
-	return 0;
-}
-
-uint8_t ParseI2CData(void)
-{
-	i2cPtr = &i2cTxObj;
-
-	static uint8_t doubleInd = 0;
-	static uint8_t floatInd = 0;
-	static uint8_t int32Ind = 0;
-	static uint8_t uint32Ind = 0;
-	static uint8_t int16Ind = 0;
-	static uint8_t uint16Ind = 0;
-	static uint8_t int8Ind = 0;
-	static uint8_t uint8Ind = 0;
-
-	static uint16_t ind = 0;
-
-	/* 1st data is "totalDataNum" */
-	memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->totalDataNum, 1);
-	ind++;
-
-	/* Remained data has the form of "dataType, parsedData" */
-	for (uint8_t i = 0; i < i2cPtr->totalDataNum; i++){
-		if (i2cPtr->dataTypeArray[i] == I2C_DOUBLE){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->doubleI2CData[doubleInd], sizeof(double));
-			doubleInd++;
-			ind = ind + sizeof(double) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_FLOAT){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->floatI2CData[floatInd], sizeof(float));
-			floatInd++;
-			ind = ind + sizeof(float) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_INT32){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->floatI2CData[int32Ind], sizeof(int32_t));
-			int32Ind++;
-			ind = ind + sizeof(int32_t) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_UINT32){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->uint32I2CData[uint32Ind], sizeof(uint32_t));
-			uint32Ind++;
-			ind = ind + sizeof(uint32_t) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_INT16){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->int16I2CData[int16Ind], sizeof(int16_t));
-			int16Ind++;
-			ind = ind + sizeof(int16_t) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_UINT16){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->uint16I2CData[uint16Ind], sizeof(uint16_t));
-			uint16Ind++;
-			ind = ind + sizeof(uint16_t) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_INT8){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->int8I2CData[int8Ind], sizeof(int8_t));
-			int8Ind++;
-			ind = ind + sizeof(int8_t) + 1;
-		}
-		else if (i2cPtr->dataTypeArray[i] == I2C_UINT8){
-			memcpy(&i2cPtr->ParsedI2CByteData[ind], &i2cPtr->dataTypeArray[i], 1);
-			memcpy(&i2cPtr->ParsedI2CByteData[ind + 1], &i2cPtr->uint8I2CData[uint8Ind], sizeof(uint8_t));
-			uint8Ind++;
-			ind = ind + sizeof(uint8_t) + 1;
-		}
-	}
-
-	doubleInd = 0;
-	floatInd = 0;
-	int32Ind = 0;
-	uint32Ind = 0;
-	int16Ind = 0;
-	uint16Ind = 0;
-	int8Ind = 0;
-	uint8Ind = 0;
-
-	ind = 0;
-
-	return 0;
-}
 
 /* Receive */
 void byteValueToRealValue(void* realData, uint8_t* byteData)
@@ -341,6 +172,7 @@ void byteValueToRealValue(void* realData, uint8_t* byteData)
 	else {
 		rxDataIndex = 0;
 		rxDataNum = 0;
+		firstRead = 0;
 		return;
 	}
 
@@ -359,15 +191,6 @@ void byteValueToRealValue(void* realData, uint8_t* byteData)
 		return;
 	}
 }
-
-
-/* For Transmitted Values */
-float txData1 = 3.14;
-float txData2 = 4.14;
-float txData3 = 5.14;
-float txData4 = 6.14;
-float txData5 = 7.14;
-float txData6 = 8.14;
 
 
 /* For Received Values */
@@ -395,7 +218,7 @@ void settingI2CReceivedData(uint8_t* byteData)
 	byteValueToRealValue(&data4, byteData);
 	byteValueToRealValue(&data5, byteData);
 	byteValueToRealValue(&data6, byteData);
-//	byteValueToRealValue(&data7, byteData);
+	byteValueToRealValue(&data7, byteData);
 //	byteValueToRealValue(&data8, byteData);
 //	byteValueToRealValue(&data9, byteData);
 //	byteValueToRealValue(&data10, byteData);
@@ -405,37 +228,18 @@ void settingI2CReceivedData(uint8_t* byteData)
 }
 
 
-/* For Simple TxRx Test */
-uint8_t aaa[6] = {0,1,2,3,4,5};
-uint8_t bbb[6] = {0};
-static uint16_t cnt = 0;
-
-
-
-/* Transmit */
-uint8_t IOIF_TransmitI2CData(void)
-{
-	i2cPtr = &i2cTxObj;
-
-	memset(i2c2CommDmaTxBuff, 0, DATA_TOTAL_BYTE);
-	memcpy(i2c2CommDmaTxBuff, i2cPtr->ParsedI2CByteData, DATA_TOTAL_BYTE);
-	uint8_t txDebug = HAL_I2C_Slave_Transmit_DMA(&hi2c2, i2c2CommDmaTxBuff, DATA_TOTAL_BYTE);
-
-	i2cTxObj = (IOIF_I2CObj_t){0};
-
-	return txDebug;
-}
-
 /* Receive */
 uint8_t IOIF_ReceiveI2CData(void)
 {
 	memset(rxByteDataArray, 0, DATA_TOTAL_BYTE);
-	uint8_t rxDebug = HAL_I2C_Master_Receive_DMA(&hi2c1, (uint16_t)SLAVE_ADDR, i2c1CommDmaRxBuff, DATA_TOTAL_BYTE);
-	memcpy(rxByteDataArray, i2c1CommDmaRxBuff, DATA_TOTAL_BYTE);
+	uint8_t rxDebug = HAL_I2C_Slave_Receive_DMA(&hi2c2, i2c2CommDmaRxBuff, DATA_TOTAL_BYTE);
+	memcpy(rxByteDataArray, i2c2CommDmaRxBuff, DATA_TOTAL_BYTE);
 	settingI2CReceivedData(rxByteDataArray);
 
 	return rxDebug;
 }
+
+uint32_t timeElapsed = 0;
 
 
 
@@ -494,15 +298,12 @@ int main(void)
   MX_ADC1_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_DCACHE1_Init();
-  MX_I2C1_Init();
   MX_I2C2_Init();
   MX_TIM1_Init();
-  MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_Base_Start_IT(&htim1);
-  HAL_TIM_Base_Start_IT(&htim2);
 
   /* USER CODE END 2 */
 
@@ -598,57 +399,19 @@ static void SystemPower_Config(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	/* TIM1 : I2C1(Master) - Receive */
+	/* TIM1 : I2C2(Slave) - Receive */
 	if (htim == &htim1){
+		/* Loop Start Time Check */
+		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+		DWT->CYCCNT = 0;
+		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+		/* Used Function */
 		IOIF_ReceiveI2CData();
+		//////////////////////////
 
-
-
-
-		/* Simple TxRx code */
-//		HAL_I2C_Master_Receive_DMA(&hi2c1, (uint16_t)SLAVE_ADDR, i2c1CommDmaRxBuff, 6);
-//		memcpy(&aaa, i2c1CommDmaRxBuff, 6);
+		timeElapsed = DWT->CYCCNT / 160;	// in microsecond
 	}
-
-	/* TIM2 : I2C2(Slave) - Transmit */
-	if (htim == &htim2){
-		/* Append data to transmit */
-		AppendI2CData(I2C_FLOAT, &txData1);
-		AppendI2CData(I2C_FLOAT, &txData2);
-		AppendI2CData(I2C_FLOAT, &txData3);
-		AppendI2CData(I2C_FLOAT, &txData4);
-		AppendI2CData(I2C_FLOAT, &txData5);
-		AppendI2CData(I2C_FLOAT, &txData6);
-
-		/* Parse data to byte */
-		ParseI2CData();
-
-		/* Transmit with I2C */
-		IOIF_TransmitI2CData();
-
-
-		/* Test Data Update */
-//		cnt++;
-//		if (cnt == 1000){
-//			cnt = 0;
-//			txData1++;
-//			txData2++;
-//			txData3++;
-//			txData4++;
-//			txData5++;
-//			txData6++;
-//		}
-
-
-
-		/* Simple TxRx code */
-//		memcpy(i2c2CommDmaTxBuff, &bbb, 6);
-//		HAL_I2C_Slave_Transmit_DMA(&hi2c2, i2c2CommDmaTxBuff, 6);
-//		for (uint8_t i = 0; i < 6; i++){
-//			bbb[i]++;
-//		}
-	}
-
 }
 
 /* USER CODE END 4 */
