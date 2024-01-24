@@ -108,13 +108,10 @@ typedef struct _IOIF_I2CObj_t {
 /* USER CODE BEGIN PV */
 
 /* For DMA I2C Communication (with DMA) */
-static uint8_t i2c1CommDmaRxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c1RxBuff"))) = {0};
-static uint8_t i2c2CommDmaTxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c2TxBuff"))) = {0};
+static uint8_t i2c1CommDmaTxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c1TxBuff"))) = {0};
+static uint8_t i2c2CommDmaRxBuff[DATA_TOTAL_BYTE] __attribute__((section(".i2c2RxBuff"))) = {0};
 
 uint8_t rxByteDataArray[DATA_TOTAL_BYTE] = {0};
-
-uint32_t txTime = 0;
-uint32_t rxTime = 0;
 
 IOIF_I2CObj_t* i2cPtr = NULL;
 IOIF_I2CObj_t i2cTxObj = {0};
@@ -341,6 +338,7 @@ void byteValueToRealValue(void* realData, uint8_t* byteData)
 	else {
 		rxDataIndex = 0;
 		rxDataNum = 0;
+		firstRead = 0;
 		return;
 	}
 
@@ -417,9 +415,9 @@ uint8_t IOIF_TransmitI2CData(void)
 {
 	i2cPtr = &i2cTxObj;
 
-	memset(i2c2CommDmaTxBuff, 0, DATA_TOTAL_BYTE);
-	memcpy(i2c2CommDmaTxBuff, i2cPtr->ParsedI2CByteData, DATA_TOTAL_BYTE);
-	uint8_t txDebug = HAL_I2C_Slave_Transmit_DMA(&hi2c2, i2c2CommDmaTxBuff, DATA_TOTAL_BYTE);
+	memset(i2c1CommDmaTxBuff, 0, DATA_TOTAL_BYTE);
+	memcpy(i2c1CommDmaTxBuff, i2cPtr->ParsedI2CByteData, DATA_TOTAL_BYTE);
+	uint8_t txDebug = HAL_I2C_Master_Transmit_DMA(&hi2c1, (uint16_t)SLAVE_ADDR, i2c1CommDmaTxBuff, DATA_TOTAL_BYTE);
 
 	i2cTxObj = (IOIF_I2CObj_t){0};
 
@@ -430,8 +428,8 @@ uint8_t IOIF_TransmitI2CData(void)
 uint8_t IOIF_ReceiveI2CData(void)
 {
 	memset(rxByteDataArray, 0, DATA_TOTAL_BYTE);
-	uint8_t rxDebug = HAL_I2C_Master_Receive_DMA(&hi2c1, (uint16_t)SLAVE_ADDR, i2c1CommDmaRxBuff, DATA_TOTAL_BYTE);
-	memcpy(rxByteDataArray, i2c1CommDmaRxBuff, DATA_TOTAL_BYTE);
+	uint8_t rxDebug = HAL_I2C_Slave_Receive_DMA(&hi2c2, i2c2CommDmaRxBuff, DATA_TOTAL_BYTE);
+	memcpy(rxByteDataArray, i2c2CommDmaRxBuff, DATA_TOTAL_BYTE);
 	settingI2CReceivedData(rxByteDataArray);
 
 	return rxDebug;
@@ -598,19 +596,16 @@ static void SystemPower_Config(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	/* TIM1 : I2C1(Master) - Receive */
+	/* TIM1 : I2C2(Slave) - Receive */
 	if (htim == &htim1){
 		IOIF_ReceiveI2CData();
-
-
-
 
 		/* Simple TxRx code */
 //		HAL_I2C_Master_Receive_DMA(&hi2c1, (uint16_t)SLAVE_ADDR, i2c1CommDmaRxBuff, 6);
 //		memcpy(&aaa, i2c1CommDmaRxBuff, 6);
 	}
 
-	/* TIM2 : I2C2(Slave) - Transmit */
+	/* TIM2 : I2C1(Master) - Transmit */
 	if (htim == &htim2){
 		/* Append data to transmit */
 		AppendI2CData(I2C_FLOAT, &txData1);
@@ -628,16 +623,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 
 		/* Test Data Update */
-//		cnt++;
-//		if (cnt == 1000){
-//			cnt = 0;
-//			txData1++;
-//			txData2++;
-//			txData3++;
-//			txData4++;
-//			txData5++;
-//			txData6++;
-//		}
+		cnt++;
+		if (cnt == 1000){
+			cnt = 0;
+			txData1++;
+			txData2++;
+			txData3++;
+			txData4++;
+			txData5++;
+			txData6++;
+		}
 
 
 
