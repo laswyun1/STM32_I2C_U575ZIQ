@@ -396,7 +396,7 @@ static void SystemPower_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+uint32_t chk = 0;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	/* TIM1 : I2C2(Slave) - Receive */
@@ -409,6 +409,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		/* Used Function */
 		IOIF_ReceiveI2CData();
 		//////////////////////////
+
+		if (data7 <0.4){
+			chk++;
+		}
 
 		timeElapsed = DWT->CYCCNT / 160;	// in microsecond
 	}
