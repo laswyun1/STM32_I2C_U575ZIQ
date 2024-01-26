@@ -303,6 +303,8 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  memset(rxByteDataArray, 0 ,DATA_TOTAL_BYTE);
+  memset(i2c2CommDmaRxBuff, 0 ,DATA_TOTAL_BYTE);
   HAL_TIM_Base_Start_IT(&htim1);
 
   /* USER CODE END 2 */
@@ -409,8 +411,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		/* Used Function */
 		IOIF_ReceiveI2CData();
 		//////////////////////////
-
-		if (data7 <0.4){
+		if ((data7 < 0.00001 && data7 > 0) || (data7 < 0 && data7 > -0.00001)){
 			chk++;
 		}
 
