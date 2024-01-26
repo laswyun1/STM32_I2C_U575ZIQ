@@ -96,6 +96,20 @@ typedef struct _IOIF_I2CObj_t {
 	uint8_t ParsedI2CByteData[DATA_TOTAL_BYTE];
 } IOIF_I2CObj_t;
 
+/* For Received Values */
+float data1;
+float data2;
+float data3;
+float data4;
+float data5;
+float data6;
+float data7;
+float data8;
+float data9;
+float data10;
+float data11;
+float data12;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -191,22 +205,6 @@ void byteValueToRealValue(void* realData, uint8_t* byteData)
 		return;
 	}
 }
-
-
-/* For Received Values */
-float data1;
-float data2;
-float data3;
-float data4;
-float data5;
-float data6;
-float data7;
-float data8;
-float data9;
-float data10;
-float data11;
-float data12;
-float data13;
 
 
 
@@ -403,10 +401,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	/* TIM1 : I2C2(Slave) - Receive */
 	if (htim == &htim1){
-		/* Loop Start Time Check */
-		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-		DWT->CYCCNT = 0;
-		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+//		/* Loop Start Time Check */
+//		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+//		DWT->CYCCNT = 0;
+//		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
 		/* Used Function */
 		IOIF_ReceiveI2CData();
@@ -415,7 +413,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			chk++;
 		}
 
-		timeElapsed = DWT->CYCCNT / 160;	// in microsecond
+//		timeElapsed = DWT->CYCCNT / 160;	// in microsecond
 	}
 }
 
